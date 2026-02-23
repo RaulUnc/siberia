@@ -98,7 +98,7 @@ function escapeHtml(s) {
 
 // Pagina principală
 app.get('/', function (req, res) {
-  res.sendFile(path.join(__dirname, 'paypal.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, function () {
@@ -107,3 +107,4 @@ app.listen(PORT, function () {
     console.log('Configurează .env (EMAIL_USER, EMAIL_PASS, TO_EMAIL) pentru trimitere mail.');
   }
 });
+
