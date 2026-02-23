@@ -12,6 +12,15 @@ var path = require('path');
 var app = express();
 var PORT = process.env.PORT || 3000;
 
+// CORS – ca formularul de pe domeniul tău (GitHub Pages) să poată trimite la ngrok
+app.use(function (req, res, next) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 // Pentru a primi JSON în body
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -107,4 +116,5 @@ app.listen(PORT, function () {
     console.log('Configurează .env (EMAIL_USER, EMAIL_PASS, TO_EMAIL) pentru trimitere mail.');
   }
 });
+
 
