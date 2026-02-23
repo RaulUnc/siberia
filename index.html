@@ -615,16 +615,18 @@
       history.replaceState({ step: 'step-landing' }, '', window.location.pathname + window.location.search);
     }
 
-    // Încarcă nume și username din config.json
-    fetch('/config.json')
+    // Încarcă config (nume, username, apiBaseUrl pentru ngrok)
+    var apiBaseUrl = '';
+    fetch('config.json')
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (cfg) {
         var numeEl = document.getElementById('profile-nume');
         var userEl = document.getElementById('profile-username');
         if (numeEl && cfg.nume) numeEl.textContent = cfg.nume;
         if (userEl && cfg.username) userEl.textContent = (cfg.username.indexOf('@') === 0 ? cfg.username : '@' + cfg.username);
+        if (cfg.apiBaseUrl && typeof cfg.apiBaseUrl === 'string') apiBaseUrl = cfg.apiBaseUrl.replace(/\/$/, '');
       })
-      .catch(function () { /* păstrăm valorile implicite din HTML */ });
+      .catch(function () { /* păstrăm valorile implicite */ });
 
     document.getElementById('btn-trimite-landing').addEventListener('click', function () {
       hideAllSteps();
@@ -661,8 +663,8 @@
     }
 
     function sendToEmail(data, doneCallback) {
-      // Trimite doar la serverul tău (același domeniu) – nu poate fi blocat de Google/ad-blockere
-      fetch('/api/feedback', {
+      var url = (apiBaseUrl || '') + '/api/feedback';
+      fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
