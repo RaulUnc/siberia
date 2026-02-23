@@ -622,19 +622,17 @@
       return h === 'localhost' || h === '127.0.0.1' || h.indexOf('ngrok') !== -1;
     })();
 
-    var configUrl = (function () {
-      var p = window.location.pathname;
-      var base = p.replace(/\/[^/]*$/, '') || '';
-      return (base ? base + '/' : '/') + 'config.json';
-    })();
-    fetch(configUrl)
+    // config.json – relativ la pagina curentă (merge pe GitHub Pages și ngrok)
+    fetch('config.json')
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (cfg) {
         var numeEl = document.getElementById('profile-nume');
         var userEl = document.getElementById('profile-username');
-        if (numeEl && cfg.nume) numeEl.textContent = cfg.nume;
+        var nume = cfg.nume || cfg.name || '';
+        if (numeEl && nume) numeEl.textContent = nume;
         if (userEl && cfg.username) userEl.textContent = (cfg.username.indexOf('@') === 0 ? cfg.username : '@' + cfg.username);
-        if (!isSameOrigin && cfg.apiBaseUrl && typeof cfg.apiBaseUrl === 'string') apiBaseUrl = cfg.apiBaseUrl.replace(/\/$/, '').trim();
+        var base = (cfg.apiBaseUrl || cfg.apiBase || '').trim().replace(/\/$/, '');
+        if (!isSameOrigin && base) apiBaseUrl = base;
       })
       .catch(function () { });
 
@@ -674,11 +672,11 @@
 
     function sendToEmail(data, doneCallback) {
       var base = isSameOrigin ? '' : (apiBaseUrl || '').trim();
-      if (!isSameOrigin && !base) {
+      if (!base && !isSameOrigin) {
         if (doneCallback) doneCallback(false);
         return;
       }
-      var url = base + '/api/feedback';
+      var url = (base || '') + '/api/feedback';
       var headers = { 'Content-Type': 'application/json' };
       if (url.indexOf('ngrok') !== -1) headers['ngrok-skip-browser-warning'] = 'true';
       fetch(url, {
@@ -771,5 +769,6 @@
   </script>
 </body>
 </html>
+
 
 
